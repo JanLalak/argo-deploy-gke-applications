@@ -1,0 +1,55 @@
+# Separate app for argocd ingress, because we need to use envsubst plugin to replace variables in the ingress yaml file.
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argocd-ingress-app
+  namespace: argocd
+
+  # Add this finalizer ONLY if you want these to cascade delete (A cascade delete, deletes both the app and its resources, rather than only the app.)
+  # finalizers:
+  #   - resources-finalizer.argocd.argoproj.io
+
+spec:
+  project: default
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+
+  source:
+    repoURL: https://github.com/janlalak/kustomization-gce-iap-with-cert-manager.git
+    targetRevision: main
+    path: ./
+    plugin:
+      name: envsubst
+      env:
+        - name: INGRESS_NAME
+          value: "argocd"
+
+        - name: INGRESS_NAMESPACE
+          value: "argocd"
+
+        - name: INGRESS_IP_NAME
+          value: "${ARGOCD_ENV_PROJECT}-k8s-ingress-argo"
+
+        - name: INGRESS_DNS
+          value: "argo${ARGOCD_ENV_DNS_ENV}.${ARGOCD_ENV_DNS_DOMAIN}"
+
+        - name: SERVICE_NAME
+          value: "argocd-server"
+
+        - name: SERVICE_PORT
+          value: "80"
+
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: argocd
+
+  ignoreDifferences:
+    - kind: Secret
+      name: argocd-cert
+      namespace: argocd
+      jsonPointers:
+        - /data/tls.crt
+        - /data/tls.key
