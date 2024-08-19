@@ -20,7 +20,7 @@ spec:
       selfHeal: true
 
   source:
-    repoURL: https://github.com/Jojoooo1k/argo-deploy-applications-infra-gke.git
+    repoURL: https://github.com/Jojoooo1/argo-deploy-applications-infra.git
     targetRevision: main
     path: applications/overlays/${ARGOCD_ENV_ENV}/shared-app
     plugin:
